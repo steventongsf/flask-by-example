@@ -11,8 +11,30 @@ services:
     volumes:
       - "dbdata:/var/lib/postgresql/data"
   redis:
-    image: redis:alpine
+    container_name: redis
+    image: redis:7.0.11
     ports:
       - 6379:6379
+  worker:
+    container_name: worker
+    build: 
+      context: .
+      dockerfile: Dockerfile.python
+    image: steventongsf/python
+    stdin_open: true
+    tty: true
+    #command: "cd /root && pip install -r requirements.txt && python worker.py"
+    environment:
+      - APP_SETTINGS=config.ProductionConfig
+      - DATABASE_URL=postgresql://localhost:5432/wordcount_dev
+      - POSTGRES_PASSWORD=password
+      - REDISTOGO_URL=redis://redis:6379
+    command: "python ./worker.py"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - $PWD:/app
+
 volumes:
   dbdata:
